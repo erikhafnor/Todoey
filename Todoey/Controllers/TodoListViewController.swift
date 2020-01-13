@@ -9,7 +9,7 @@
 import UIKit
 import RealmSwift
 
-class TodoListViewController: UITableViewController {
+class TodoListViewController: SwipeTableViewController {
     
     //let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
@@ -39,7 +39,7 @@ class TodoListViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "toDoItemCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
         if let item = todoItems?[indexPath.row] {
         
@@ -65,10 +65,18 @@ class TodoListViewController: UITableViewController {
 //          Delete items when clicking them in tableview.
 //        context.delete(todoItems[indexPath.row])
 //        todoItems.remove(at: indexPath.row)
+    
+        if let item = todoItems?[indexPath.row] {
+            do {
+                try realm.write {
+                    item.done = !item.done
+                }
+            } catch {
+                print("Error checkmarking/saving done status on item, \(error)")
+            }
+        }
         
-//        todoItems?[indexPath.row].done = !todoItems[indexPath.row].done
-//        
-//        saveItems()
+       tableView.reloadData()
         
         tableView.deselectRow(at: indexPath, animated: true)
         
@@ -90,11 +98,11 @@ class TodoListViewController: UITableViewController {
             if let currentCategory = self.selectedCategory {
                 do {
                     try self.realm.write {
-                let newItem = Item()
-                newItem.title = textField.text!
+                        let newItem = Item()
+                        newItem.title = textField.text!
                         newItem.dateCreated = Date()
-                currentCategory.items.append(newItem)
-            }
+                        currentCategory.items.append(newItem)
+                    }
                 } catch {
                     print("Error saving new items, \(error)")
                 }
@@ -124,8 +132,25 @@ class TodoListViewController: UITableViewController {
 
         tableView.reloadData()
 }
+    
+    //MARK: - Delete Data From Swipe
+    
+    override func updateModel(at indexPath: IndexPath) {
+        
+        //Update our data model
+        if let item = todoItems?[indexPath.row] {
+            do {
+                try realm.write {
+                    realm.delete(item)
+                }
+            } catch {
+                print("Error deleting category, \(error)")
+            }
+        }
+    }
    
 }
+
 
 //MARK - Search bar methods
 extension TodoListViewController: UISearchBarDelegate {
